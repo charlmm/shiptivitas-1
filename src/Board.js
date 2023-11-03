@@ -7,6 +7,8 @@ import './Board.css';
 export default class Board extends React.Component {
   constructor(props) {
     super(props);
+    this.getClients = this.getClients.bind(this);
+    this.updateCardStatus = this.updateCardStatus.bind(this);
     const clients = this.getClients();
     this.state = {
       clients: {
@@ -15,12 +17,48 @@ export default class Board extends React.Component {
         complete: clients.filter(client => client.status && client.status === 'complete'),
       }
     }
+    
     this.swimlanes = {
       backlog: React.createRef(),
       inProgress: React.createRef(),
       complete: React.createRef(),
     }
   }
+
+  componentDidMount() {
+    const drake = Dragula([this.swimlanes.backlog.current, this.swimlanes.inProgress.current, this.swimlanes.complete.current]);
+
+    // Handle drop event in the Board component
+    drake.on('drop', (el, target, source, sibling) => {
+      // Determine the new swimlane based on the target's ref
+      const newSwimlane = Object.keys(this.swimlanes).find(key => this.swimlanes[key].current === target);
+      
+      // Get the card's ID
+      const cardId = el.getAttribute('data-id');
+
+      this.updateCardStatus(cardId,newSwimlane);
+    });
+  }
+
+  updateCardStatus(cardId, newStatus) {
+    const updatedClients = { ...this.state.clients }; // Create a copy of the clients object
+      const movedCard = this.getClients().find(client => client.id === cardId)
+      const movedCardStatus = movedCard.status === "in-progress" ? "inProgress" : movedCard.status 
+      console.log(newStatus)
+        updatedClients[movedCardStatus] = updatedClients[movedCardStatus].filter(client => client.id !== cardId);
+        console.log("State start",this.state.clients)
+
+        const movedCardFinalStatus = newStatus === "inProgress" ? "in-progress" : newStatus
+        const updatedCard = { ...movedCard, status: movedCardFinalStatus };
+       
+        updatedClients[newStatus].push(updatedCard);
+        console.log(updatedCard)
+        console.log(updatedClients)
+        
+    this.setState({clients: updatedClients});
+    console.log("State final",this.state.clients)
+  }
+
   getClients() {
     return [
       ['1','Stark, White and Abbott','Cloned Optimal Architecture', 'in-progress'],
@@ -52,7 +90,7 @@ export default class Board extends React.Component {
   }
   renderSwimlane(name, clients, ref) {
     return (
-      <Swimlane name={name} clients={clients} dragulaRef={ref}/>
+      <Swimlane name={name} clients={clients} dragulaRef={ref} updateCardStatus={this.updateCardStatus}/>
     );
   }
 

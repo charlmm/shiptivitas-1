@@ -3,6 +3,10 @@ import Card from './Card';
 import './Swimlane.css';
 
 export default class Swimlane extends React.Component {
+  onDrop = (cardId, newStatus) => {
+    // Handle the card's status change within the Swimlane component
+    this.props.onDrop(cardId, newStatus);
+  }
   render() {
     const cards = this.props.clients.map(client => {
       return (
@@ -12,6 +16,7 @@ export default class Swimlane extends React.Component {
           name={client.name}
           description={client.description}
           status={client.status}
+          updateCardStatus={this.props.updateCardStatus}
         />
       );
     })
